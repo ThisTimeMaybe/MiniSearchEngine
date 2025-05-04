@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔎 Mini Search Engine</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <style>
+    :root {
+      --bg-color: #f8f9fa;
+      --text-color: #000;
+      --card-bg: white;
+      --btn-bg: #007bff;
+    }
+
+    body.dark-mode {
+      --bg-color: #121212;
+      --text-color: #fff;
+      --card-bg: #1e1e1e;
+      --btn-bg: #0d6efd;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: Arial, sans-serif;
+      background-image: url("{{ url_for('static', filename='images/arcade.jpg') }}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 700px;
+      margin-top: 50px;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .search-box {
+      border-radius: 30px;
+      padding: 12px;
+      font-size: 18px;
+      flex-grow: 1;
+      background-color: var(--card-bg);
+      color: var(--text-color);
+      border: 1px solid #ccc;
+    }
+
+    .mic-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 24px;
+      margin-left: 8px;
+      color: var(--btn-bg);
+    }
+
+    .btn-primary, .btn-success {
+      font-size: 14px;
+      padding: 8px 12px;
+    }
+
+    .dark-mode-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--btn-bg);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    .search-results, .web-results {
+      margin-top: 20px;
+    }
+
+    .result-item {
+      background: var(--card-bg);
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .result-snippet {
+      font-size: 14px;
+      color: gray;
+    }
+
+    .image-results img {
+      max-width: 100%;
+      height: auto;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+
+    @media (max-width: 600px) {
+      .d-flex {
+        flex-direction: column;
+      }
+      .mic-btn {
+        font-size: 20px;
+        margin: 5px 0;
+      }
+      .btn-primary {
+        width: 100%;
+      }
+      .dark-mode-toggle {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+<button class="dark-mode-toggle" id="darkModeToggle">🌙 Dark Mode</button>
+
+<div class="container">
+  <h2 class="text-center">🔎 Mini Search Engine</h2>
+
+  <form action="/search" method="GET" class="d-flex mt-4" id="searchForm">
+    <input type="text" name="q" id="searchInput" class="form-control search-box" placeholder="Enter search term..." value="{{ query }}">
+    <button type="button" id="voiceSearch" class="mic-btn">🎤</button>
+    <button type="submit" class="btn btn-primary ms-2">Search</button>
+  </form>
+
+  <div class="d-flex justify-content-end mt-2">
+    <label for="languageSelect" class="me-2">🌍 Language:</label>
+    <select id="languageSelect" class="form-select w-auto">
+      <option value="en-US">English</option>
+      <option value="es-ES">Español</option>
+      <option value="fr-FR">Français</option>
+    </select>
+  </div>
+
+  <form action="/image_search" method="POST" enctype="multipart/form-data" class="mt-3">
+    <label for="imageUpload" class="form-label">🔍 Upload an Image to Search</label>
+    <input type="file" name="image" id="imageUpload" class="form-control" accept="image/*">
+    <button type="submit" class="btn btn-success mt-2">Search by Image</button>
+  </form>
+
+  {% if results %}
+  <div class="search-results">
+    <h4>🔎 Text Search Results</h4>
+    <ul class="list-group">
+      {% for result in results %}
+      <li class="list-group-item result-item">
+        <strong>{{ result[0] }}</strong>
+        <p class="result-snippet">{{ result[1] }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if web_results %}
+  <div class="web-results">
+    <h4>🌐 Web Search Results</h4>
+    <ul class="list-group">
+      {% for web in web_results %}
+      <li class="list-group-item result-item">
+        <a href="{{ web.link }}" target="_blank"><strong>{{ web.title }}</strong></a>
+        <p class="result-snippet">{{ web.snippet }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if image_results %}
+  <div class="image-results mt-4">
+    <h4>🎨 Image Search Results</h4>
+    <div class="row">
+      {% for img in image_results %}
+      <div class="col-6 col-md-4">
+        <img src="{{ url_for('static', filename=img.split('static/')[-1]) }}" class="img-fluid" alt="Matching Image">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- 💬 Assistant Chat Button -->
+<button id="toggleChat" style="position: fixed; bottom: 20px; right: 20px; z-index: 999; padding: 10px 20px; border-radius: 50px; background-color: #007bff; color: white; border: none;">
+  💬 Ask Assistant
+</button>
+
+<!-- 💬 Chat Box -->
+<div id="chatBox" style="display: none; position: fixed; bottom: 80px; right: 20px; width: 300px; max-height: 400px; background: white; border: 1px solid #ccc; border-radius: 10px; overflow: hidden; z-index: 1000; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+  <div id="chatMessages" style="padding: 10px; height: 300px; overflow-y: auto;"></div>
+  <div style="display: flex; border-top: 1px solid #ccc;">
+    <input type="text" id="userInput" placeholder="Ask me anything..." style="flex: 1; padding: 10px; border: none; outline: none;">
+    <button id="sendBtn" style="padding: 10px; background: #007bff; color: white; border: none;">Send</button>
+  </div>
+</div>
+
+<script>
+  document.getElementById("darkModeToggle").addEventListener("click", function () {
+    document.body.classList.toggle("dark-mode");
+  });
+
+  const voiceBtn = document.getElementById("voiceSearch");
+  const searchInput = document.getElementById("searchInput");
+  const languageSelect = document.getElementById("languageSelect");
+
+  if ("webkitSpeechRecognition" in window) {
+    const recognition = new webkitSpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    voiceBtn.onclick = () => {
+      recognition.lang = languageSelect.value;
+      recognition.start();
+    };
+
+    recognition.onresult = function (event) {
+      searchInput.value = event.results[0][0].transcript;
+      document.getElementById("searchForm").submit();
+    };
+
+    recognition.onerror = function (event) {
+      alert("Voice recognition error: " + event.error);
+    };
+  }
+
+  // 💬 Toggle Chat Box
+  const toggleBtn = document.getElementById('toggleChat');
+  const chatBox = document.getElementById('chatBox');
+  const chatMessages = document.getElementById('chatMessages');
+  const userInput = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+
+  toggleBtn.addEventListener('click', () => {
+    chatBox.style.display = chatBox.style.display === 'none' ? 'block' : 'none';
+  });
+
+  sendBtn.addEventListener('click', async () => {
+    const msg = userInput.value.trim();
+    if (msg) {
+      const userMsg = document.createElement('div');
+      userMsg.innerHTML = `<strong>You:</strong> ${msg}`;
+      chatMessages.appendChild(userMsg);
+
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      userInput.value = '';
+
+      try {
+        const response = await fetch('/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message: msg })
+        });
+
+        const data = await response.json();
+        const assistantMsg = document.createElement('div');
+        assistantMsg.innerHTML = `<strong>Assistant:</strong> ${data.reply}`;
+        chatMessages.appendChild(assistantMsg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      } catch (error) {
+        const errorMsg = document.createElement('div');
+        errorMsg.innerHTML = `<strong>Assistant:</strong> Sorry, something went wrong.`;
+        chatMessages.appendChild(errorMsg);
+      }
+    }
+  });
+
+  userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+</script>
+</body>
+</html>

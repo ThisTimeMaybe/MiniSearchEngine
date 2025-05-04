@@ -1,0 +1,26 @@
+{
+    "python": {
+        "doc1.txt": 1,
+        "doc2.txt": 1,
+        "doc3.txt": 1
+    },
+    "powerful": {
+        "doc1.txt": 1,
+        "doc2.txt": 1,
+        "doc3.txt": 1
+    },
+    "programming": {
+        "doc1.txt": 1,
+        "doc2.txt": 1,
+        "doc3.txt": 1
+    },
+    "language": {
+        "doc1.txt": 1,
+        "doc2.txt": 1,
+        "doc3.txt": 1
+    },
+    "know": {
+        "doc2.txt": 1,
+        "doc3.txt": 2
+    }
+}
